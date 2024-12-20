@@ -303,16 +303,15 @@ def add_equipment_model():
 def add_place():
     if request.method == 'POST':
         try:
-            new_model = request.form['name'].strip().capitalize()
-            type_id = request.form['type_id']
+            new_place = request.form['name'].strip().capitalize()
             conn = sqlite3.connect('calibration.db')
             c = conn.cursor()
-            c.execute('INSERT INTO place_types (name, place_type_id) VALUES (?, ?)', 
-                    (new_model, type_id))
-            model_id = c.lastrowid
+            c.execute('INSERT INTO place_types (name) VALUES (?)', 
+                    (new_place,))
+            place_id = c.lastrowid
             conn.commit()
             conn.close()
-            return jsonify({'success': True, 'id': model_id, 'name': new_model})
+            return jsonify({'success': True, 'id': place_id, 'name': new_place})
         except sqlite3.IntegrityError:
             return jsonify({'success': False, 'error': 'Modelo já existe'}), 400
         except Exception as e:
