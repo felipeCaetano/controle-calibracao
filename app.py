@@ -29,6 +29,13 @@ def init_db():
     ''')
 
     c.execute('''
+    CREATE TABLE IF NOT EXISTS place_types (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL UNIQUE
+    )
+    ''')
+
+    c.execute('''
     CREATE TABLE IF NOT EXISTS equipment_models (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
@@ -261,10 +268,10 @@ def get_equipment_models(type_id):
 @app.route('/add_type', methods=['POST'])
 def add_equipment_type():
     try:
-        new_type = request.form['name'].strip()
+        new_type = request.form['name'].strip().capitalize()
         conn = sqlite3.connect('calibration.db')
         c = conn.cursor()
-        c.execute('INSERT INTO equipment_types (name) VALUES (?)', (new_type,))
+        c.execute('INSERT INTO place_types (name) VALUES (?)', (new_type,))
         type_id = c.lastrowid
         conn.commit()
         conn.close()
@@ -277,7 +284,7 @@ def add_equipment_type():
 @app.route('/add_model', methods=['POST'])
 def add_equipment_model():
     try:
-        new_model = request.form['name'].strip()
+        new_model = request.form['name'].strip().capitalize()
         type_id = request.form['type_id']
         conn = sqlite3.connect('calibration.db')
         c = conn.cursor()
@@ -291,6 +298,26 @@ def add_equipment_model():
         return jsonify({'success': False, 'error': 'Modelo já existe'}), 400
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
+    
+@app.route('/add_place', methods=['POST'])
+def add_place():
+    if request.method == 'POST':
+        try:
+            new_model = request.form['name'].strip().capitalize()
+            type_id = request.form['type_id']
+            conn = sqlite3.connect('calibration.db')
+            c = conn.cursor()
+            c.execute('INSERT INTO place_types (name, place_type_id) VALUES (?, ?)', 
+                    (new_model, type_id))
+            model_id = c.lastrowid
+            conn.commit()
+            conn.close()
+            return jsonify({'success': True, 'id': model_id, 'name': new_model})
+        except sqlite3.IntegrityError:
+            return jsonify({'success': False, 'error': 'Modelo já existe'}), 400
+        except Exception as e:
+            return jsonify({'success': False, 'error': str(e)}), 500
+
 
 @app.route('/add', methods=['GET', 'POST'])
 def add_equipment():
